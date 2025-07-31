@@ -40,13 +40,10 @@ def chunk_video(video_path: Path):
     This function will handle the logic for chunking video files
     into smaller segments based on the audio chunks.
     """
-    # For demonstration, we will just call the audio_ranges function
-    # to get the audio chunks and print them.
     wav_path = audio.extract_wav_file(video_path)
     ranges = video_ranges(wav_path)
     audio_chunks = audio.extract_wav_files(wav_path, ranges)
     lower_video_path = video.extract_lower_quality_video(video_path)
     video_chunks = video.extract_video_chunks(lower_video_path, ranges)
-    
-    # Here you would implement the actual video chunking logic
-    # based on the audio chunks obtained.
+
+    return audio_chunks, video_chunks

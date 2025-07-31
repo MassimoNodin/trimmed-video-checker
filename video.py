@@ -31,6 +31,6 @@ def extract_video_chunks(video_path: Path, ranges: List[VideoRange]) -> List[Pat
             'ffmpeg', '-i', str(video_path), '-ss', str(start_time), '-to', str(end_time),
             '-c:v', 'copy', '-c:a', 'copy', '-y', str(segment_path)
         ]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         extracted_files.append(segment_path)
     return extracted_files
