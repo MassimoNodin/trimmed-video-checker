@@ -1,8 +1,13 @@
 from pathlib import Path
 import wave
+import subprocess
+from typing import List
 
 CHUNK_LENGTH = 5  # seconds
 OVERLAPPING_COUNT = 0 # Times Overlapped
+
+TEMP_AUDIO_DIR = Path("temp")
+TEMP_AUDIO_DIR.mkdir(exist_ok=True)
 
 class AudioRange:
     def __init__(self, start: float, end: float):
@@ -42,3 +47,21 @@ def get_audio_duration(wav_path: Path) -> float:
         duration = frames / float(rate)
     return duration
 
+def extract_wav_file(video_path: Path) -> Path:
+    """
+    Function to extract the audio from a video file and save it as a wave file.
+    Returns the path to the extracted wave file.
+    """
+    wav_path = TEMP_AUDIO_DIR / f"{video_path.stem}.wav"
+    cmd = [
+        'ffmpeg', '-i', str(video_path), '-vn', '-acodec', 'pcm_s16le', "-threads", "2", str(wav_path)
+    ]
+    subprocess.run(cmd, check=True)
+    return Path(wav_path)
+
+def extract_wav_files(wav_path: Path, ranges: List[AudioRange]):
+    """
+    Function to extract audio segments from a wave file based on the provided ranges.
+    Saves the extracted segments in the TEMP_AUDIO_DIR.
+    """
+    return
