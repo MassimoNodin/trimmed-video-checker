@@ -8,5 +8,5 @@ TEMP_VIDEO_DIR = Path("temp")
 TEMP_VIDEO_DIR.mkdir(exist_ok=True)
 
 CHUNK_LENGTH = 5  # seconds
-OVERLAPPING_COUNT = 0 # Times Overlapped
+OVERLAPPING_COUNT = 1 # Times Overlapped
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

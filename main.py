@@ -1,21 +1,78 @@
+import sys
+import termios
+import tty
 import chunk_video
-from embedding import embed_audio, embed_videos
+from embedding import embed_audio, embed_videos, load_index
 from pathlib import Path
+import faiss
+import random
 
 def add_video(video_path: Path):
-    print(f"Adding video: {video_path}")
+    print(f"\nAdding video: {video_path.name}")
     audio_chunks, video_chunks = chunk_video.chunk_video(video_path)
-    embed_audio(audio_chunks)
-    """
-    Function to add a video to the system.
-    This function will handle the logic for adding a new video,
-    including any necessary validations and processing.
-    """
-    # Implementation of video addition logic goes here
-    pass
+    audio_embeddings = embed_audio(audio_chunks)
+    video_embeddings = embed_videos(video_chunks)
+    return video_embeddings, audio_embeddings, video_chunks, audio_chunks
+
+def get_char():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)  # Read one character
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+def get_inputs(visual_weight, eps):
+    print(f"Current Visual Weight: {visual_weight}, Current Audio Weight: {round(1 - visual_weight, 2)}, Current EPS: {eps}")
+    key = print("Press 'w' to increase visual weight, 's' to decrease, 'a' to decrease eps, 'd' to increase eps, or 'q' to confirm: ")
+    key = get_char()
+    if key == 'w':
+        visual_weight = round(min(1.0, visual_weight + 0.05), 2)
+    if key == "W":
+        visual_weight = round(min(1.0, visual_weight + 0.01), 2)
+    elif key == 's':
+        visual_weight = round(max(0.0, visual_weight - 0.05), 2)
+    if key == "S":
+        visual_weight = round(max(0.0, visual_weight - 0.01), 2)
+    elif key == 'a':
+        eps = round(max(0.0001, eps - 0.001), 4)
+    elif key == "A":
+        eps = round(max(0.0001, eps - 0.0001), 4)
+    elif key == 'd':
+        eps = round(min(1.0, eps + 0.001), 4)
+    elif key == "D":
+        eps = round(min(1.0, eps + 0.0001), 4)
+    elif key == 'q':
+        return visual_weight, eps, True
+    return visual_weight, eps, False
 
 def main():
-    for video_file in Path("/mnt/nvme/clipsviewer/videos_test/PS5/CREATE/Video Clips/Grand Theft Auto V").glob("*.mp4"):
-        add_video(video_file)
+    visual_feats = []
+    audio_feats = []
+
+    video_paths = []
+
+    index: faiss.IndexFlatL2 = load_index()
+    video_files = list(Path("/mnt/nvme/clipsviewer/videos_test/PS5/CREATE/Video Clips/Grand Theft Auto V").glob("*.mp4"))
+    random.shuffle(video_files)
+    for video_file in video_files:
+        video_feats = add_video(video_file)
+        visual_feats.extend(video_feats[0])
+        audio_feats.extend(video_feats[1])
+        video_paths.extend(video_feats[3])
+        best_index = (None, float('inf'))
+        for chunk in video_feats[1]:
+            chunk_np = chunk.cpu().numpy().reshape(1, -1)
+            if index.ntotal > 0:
+                D, I = index.search(chunk_np, 1)
+                if D[0][0] < best_index[1]:
+                    best_index = (I[0][0], D[0][0])
+        for chunk in video_feats[1]:
+            index.add(chunk.cpu().numpy().reshape(1, -1))
+        print(f"Most similar index: {video_paths[best_index[0]].name}, Distance: {best_index[1]}") if best_index[0] is not None else print("No similar index found.")
+
+    print(f"Loaded FAISS index with {index.ntotal} entries.")
 
 main()
