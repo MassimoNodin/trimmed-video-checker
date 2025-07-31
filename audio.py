@@ -2,9 +2,7 @@ from pathlib import Path
 import wave
 import subprocess
 from typing import List
-
-TEMP_AUDIO_DIR = Path("temp")
-TEMP_AUDIO_DIR.mkdir(exist_ok=True)
+from config import TEMP_AUDIO_DIR
 
 def extract_wav_file(video_path: Path) -> Path:
     """

@@ -1,9 +1,8 @@
 from pathlib import Path
 import audio
+import video
 import wave
-
-CHUNK_LENGTH = 5  # seconds
-OVERLAPPING_COUNT = 0 # Times Overlapped
+from config import CHUNK_LENGTH, OVERLAPPING_COUNT
 
 class VideoRange:
     def __init__(self, start: float, end: float):
@@ -52,6 +51,7 @@ def chunk_video(video_path: Path):
     # to get the audio chunks and print them.
     wav_path = audio.extract_wav_file(video_path)
     ranges = video_ranges(wav_path)
+    lower_video_path = video.extract_lower_quality_video(video_path)
     audio_chunks = audio.extract_wav_files(wav_path, ranges)
 
     for chunk in ranges:
