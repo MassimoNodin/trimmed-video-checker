@@ -43,6 +43,7 @@ def chunk_video(video_path: Path):
     wav_path = audio.extract_wav_file(video_path)
     ranges = video_ranges(wav_path)
     audio_chunks = audio.extract_wav_files(wav_path, ranges)
+    wav_path.unlink()
     lower_video_path = video.extract_lower_quality_video(video_path)
     video_chunks = video.extract_video_chunks(lower_video_path, ranges)
 
