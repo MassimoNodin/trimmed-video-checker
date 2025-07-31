@@ -1,6 +1,8 @@
 from pathlib import Path
 import subprocess
+from typing import List
 from config import TEMP_VIDEO_DIR
+from utils import VideoRange
 
 def extract_lower_quality_video(video_path: str, width: int = 64, height: int = 64) -> str:
     """

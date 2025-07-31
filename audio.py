@@ -3,6 +3,7 @@ import wave
 import subprocess
 from typing import List
 from config import TEMP_AUDIO_DIR
+from utils import VideoRange
 
 def extract_wav_file(video_path: Path) -> Path:
     """
@@ -16,7 +17,7 @@ def extract_wav_file(video_path: Path) -> Path:
     subprocess.run(cmd, check=True)
     return Path(wav_path)
 
-def extract_wav_files(wav_path: Path, ranges):
+def extract_wav_files(wav_path: Path, ranges: List[VideoRange]) -> List[Path]:
     """
     Function to extract audio segments from a wave file based on the provided ranges.
     Saves the extracted segments in the TEMP_AUDIO_DIR.
