@@ -2,17 +2,16 @@ import sys
 import termios
 import tty
 import chunk_video
-from embedding import embed_audio, embed_videos, load_index
+from embedding import load_index
 from pathlib import Path
 import faiss
 import random
 
 def add_video(video_path: Path):
     print(f"\nAdding video: {video_path.name}")
-    audio_chunks, video_chunks = chunk_video.chunk_video(video_path)
-    audio_embeddings = embed_audio(audio_chunks)
-    video_embeddings = embed_videos(video_chunks)
-    return video_embeddings, audio_embeddings, video_chunks, audio_chunks
+    
+    audio_extractor, video_extractor = chunk_video.chunk_video(video_path)
+    return video_extractor, audio_extractor
 
 def get_char():
     fd = sys.stdin.fileno()
@@ -58,19 +57,19 @@ def main():
     video_files = list(Path("/mnt/nvme/clipsviewer/videos_test/PS5/CREATE/Video Clips/Grand Theft Auto V").glob("*.mp4"))
     random.shuffle(video_files)
     for video_file in video_files:
-        video_feats = add_video(video_file)
-        visual_feats.extend(video_feats[0])
-        audio_feats.extend(video_feats[1])
-        video_paths.extend(video_feats[3])
+        video_extractor, audio_extractor = add_video(video_file)
+        chunks = []
         best_index = (None, float('inf'))
-        for chunk in video_feats[1]:
-            chunk_np = chunk.cpu().numpy().reshape(1, -1)
+        for chunk in audio_extractor:
+            chunk_np = chunk[0].cpu().numpy().reshape(1, -1)
+            video_paths.append(chunk[1])
             if index.ntotal > 0:
                 D, I = index.search(chunk_np, 1)
                 if D[0][0] < best_index[1]:
                     best_index = (I[0][0], D[0][0])
-        for chunk in video_feats[1]:
-            index.add(chunk.cpu().numpy().reshape(1, -1))
+            chunks.append(chunk_np)
+        for chunk in chunks:
+            index.add(chunk)
         print(f"Most similar index: {video_paths[best_index[0]].name}, Distance: {best_index[1]}") if best_index[0] is not None else print("No similar index found.")
 
     print(f"Loaded FAISS index with {index.ntotal} entries.")

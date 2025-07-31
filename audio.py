@@ -1,6 +1,9 @@
+import os
 from pathlib import Path
 import subprocess
 from typing import List, Iterator
+from embedding import embed_audio_chunk
+import faiss
 from config import TEMP_AUDIO_DIR
 from utils import VideoRange
 
@@ -8,7 +11,7 @@ class AudioExtractor:
     """
     A class to extract audio segments from a video file iteratively.
     """
-    def __init__(self, video_path: Path, ranges: List[VideoRange]):
+    def __init__(self, video_path: Path, ranges: List[VideoRange], index: faiss.IndexFlatL2 = None):
         """
         Initializes the AudioExtractor by extracting the full audio from the video.
 
@@ -20,6 +23,7 @@ class AudioExtractor:
         self.ranges = ranges
         self.wav_path = self._extract_full_wav()
         self._index = 0
+        self.index = index
 
     def _extract_full_wav(self) -> Path:
         """
@@ -52,6 +56,8 @@ class AudioExtractor:
             ]
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self._index += 1
-            return segment_path
+            audio_embedding = embed_audio_chunk(segment_path)
+            return audio_embedding, segment_path
         else:
+            os.unlink(self.wav_path) if self.wav_path.exists() else None
             raise StopIteration
