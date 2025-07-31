@@ -16,3 +16,21 @@ def extract_lower_quality_video(video_path: str, width: int = 64, height: int = 
     ]
     subprocess.run(cmd, check=True)
     return output_path
+
+def extract_video_chunks(video_path: Path, ranges: List[VideoRange]) -> List[Path]:
+    """
+    Function to extract video segments based on the provided ranges.
+    Saves the extracted segments in the TEMP_VIDEO_DIR.
+    """
+    extracted_files = []
+    for i, video_range in enumerate(ranges):
+        start_time = video_range.start
+        end_time = video_range.end
+        segment_path = TEMP_VIDEO_DIR / f"{video_path.stem}_segment_{i}.mp4"
+        cmd = [
+            'ffmpeg', '-i', str(video_path), '-ss', str(start_time), '-to', str(end_time),
+            '-c:v', 'copy', '-c:a', 'copy', '-y', str(segment_path)
+        ]
+        subprocess.run(cmd, check=True)
+        extracted_files.append(segment_path)
+    return extracted_files

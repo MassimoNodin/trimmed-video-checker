@@ -44,11 +44,9 @@ def chunk_video(video_path: Path):
     # to get the audio chunks and print them.
     wav_path = audio.extract_wav_file(video_path)
     ranges = video_ranges(wav_path)
-    lower_video_path = video.extract_lower_quality_video(video_path)
     audio_chunks = audio.extract_wav_files(wav_path, ranges)
-
-    for chunk in ranges:
-        print(f"Video chunk from {chunk.start} to {chunk.end}")
+    lower_video_path = video.extract_lower_quality_video(video_path)
+    video_chunks = video.extract_video_chunks(lower_video_path, ranges)
     
     # Here you would implement the actual video chunking logic
     # based on the audio chunks obtained.
