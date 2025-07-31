@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import subprocess
 from typing import List
@@ -33,4 +34,5 @@ def extract_video_chunks(video_path: Path, ranges: List[VideoRange]) -> List[Pat
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         extracted_files.append(segment_path)
+    os.unlink(video_path) if video_path.exists() else None
     return extracted_files

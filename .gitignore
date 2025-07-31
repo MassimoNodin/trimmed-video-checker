@@ -4,3 +4,4 @@
 *.pyd
 *.wav
 *.mp4
+index.faiss

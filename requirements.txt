@@ -2,3 +2,5 @@ torchvision
 torch
 librosa
 transformers
+faiss-gpu
+numpy<2.0.0
