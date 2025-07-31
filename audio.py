@@ -28,9 +28,8 @@ def extract_wav_files(wav_path: Path, ranges: List[VideoRange]) -> List[Path]:
         end_time = audio_range.end
         segment_path = TEMP_AUDIO_DIR / f"{wav_path.stem}_segment_{i}.wav"
         cmd = [
-            'ffmpeg', '-i', str(wav_path), '-ss', str(start_time), "-y", '-to', str(end_time),
-            '-acodec', 'pcm_s16le', str(segment_path)
+            'ffmpeg', '-i', str(wav_path), '-ss', str(start_time), "-y", '-vn', '-to', str(end_time), '-acodec', 'pcm_s16le', '-ar', '48000', '-ac', '1', str(segment_path)
         ]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         extracted_files.append(segment_path)
     return extracted_files

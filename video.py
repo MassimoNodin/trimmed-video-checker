@@ -14,7 +14,7 @@ def extract_lower_quality_video(video_path: str, width: int = 64, height: int = 
         'ffmpeg', '-i', video_path, '-vf', f'scale={width}:{height}', '-c:v', 'libx264',
         '-preset', 'fast', '-crf', '28', '-y', output_path
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return output_path
 
 def extract_video_chunks(video_path: Path, ranges: List[VideoRange]) -> List[Path]:
