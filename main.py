@@ -1,6 +1,5 @@
 import chunk_video
 from pathlib import Path
-import wave
 
 def add_video(video_path: Path):
     chunk_video.chunk_video(video_path)
