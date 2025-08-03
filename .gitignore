@@ -5,3 +5,5 @@
 *.wav
 *.mp4
 index.faiss
+/embeddings
+/temp

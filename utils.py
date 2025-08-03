@@ -27,13 +27,18 @@ def video_ranges(video_path: Path):
     This function will create ranges for chunking the video into smaller segments.
     Each segment will be of length CHUNK_LENGTH, with overlapping segments based on OVERLAPPING_COUNT.
     """
+    # print(f"Calculating video ranges for {video_path.name}...")
     ranges = []
     # Get the total duration of the video file
     total_duration = get_video_duration(video_path)
 
+    # print(f"Video duration: {total_duration:.2f} seconds")
+
     new_chunk_length = CHUNK_LENGTH / (2 ** (OVERLAPPING_COUNT))
     start = 0
-    while start + CHUNK_LENGTH <= total_duration:
+    while start + new_chunk_length + CHUNK_LENGTH <= total_duration:
         ranges.append(VideoRange(start, start + CHUNK_LENGTH))
         start = start + new_chunk_length
+    ranges.append(VideoRange(start, start + CHUNK_LENGTH))
+    # print(f"Generated {len(ranges)} ranges for processing")
     return ranges

@@ -5,13 +5,52 @@ import chunk_video
 from embedding import load_index
 from pathlib import Path
 import faiss
-import random
+import logging
 
-def add_video(video_path: Path):
-    print(f"\nAdding video: {video_path.name}")
+logging.basicConfig(level=logging.INFO)
+
+def add_video(video_path: Path, audio_index: faiss.IndexFlatIP, video_index: faiss.IndexFlatIP, video_paths: list):
+    logging.info(f"\nAdding video: {video_path.name}")
+
+    embed_extractor = chunk_video.chunk_video(video_path)
+    chunks = []
+    best_index = (None, float('inf'))
+    length = 0
+    start = False
+    chunk_count = 0
+    for audio_chunk, audio_segment_path, video_chunk, video_segment_path in embed_extractor:
+        chunk_count += 1
+        # print(f"Processing chunk {chunk_count} - Audio: {audio_segment_path.name}, Video: {video_segment_path.name if video_segment_path else 'None'}")
+        chunk_np = audio_chunk.reshape(1, -1)
+        chunk_video_np = video_chunk.reshape(1, -1)
+        video_paths.append(audio_segment_path)
+        if audio_index.ntotal > 0:
+            D, I = audio_index.search(chunk_np, 1)
+            if D[0][0] > 0.9:
+                # print(f"Found Audio Match with {video_paths[I[0][0]].name} - Distance: {D[0][0]}")
+                D1, I1 = video_index.search(chunk_video_np, 1)
+                if I1[0][0] + 1 == I[0][0] or I1[0][0] - 1 == I[0][0]:
+                    logging.info(f"Found Trimmed Video for {video_path.name} - Trimmed Video: {video_paths[I[0][0]].name} - Distance: {D[0][0]}")
+                if not start:
+                    # print(f"Start of trimmed video: {video_paths[I[0][0]].name}")
+                    start = True
+                length += 1
+            elif start:
+                # print(f"End of trimmed video: {video_paths[I[0][0]].name}, Length: {length}")
+                start = False
+                length = 0
+            if D[0][0] < best_index[1]:
+                best_index = (I[0][0], D[0][0])
+        # print(f"Most similar index: {I[0][0]}, Distance: {D[0][0]}, Length: {length}") if best_index[0] is not None else print("No similar index found.")
+        chunks.append((chunk_np, chunk_video_np))
     
-    audio_extractor, video_extractor = chunk_video.chunk_video(video_path)
-    return video_extractor, audio_extractor
+    # print(f"Completed processing {chunk_count} chunks for {video_path.name}")
+    # print(f"Adding {len(chunks)} embeddings to FAISS index...")
+    for chunk in chunks:
+        audio_index.add(chunk[0])
+        video_index.add(chunk[1])
+    # print(f"Successfully added video {video_path.name} to index. Total entries: {audio_index.ntotal}")
+    # input()
 
 def get_char():
     fd = sys.stdin.fileno()
@@ -48,30 +87,20 @@ def get_inputs(visual_weight, eps):
     return visual_weight, eps, False
 
 def main():
-    visual_feats = []
-    audio_feats = []
-
+    audio_index, video_index = load_index()
     video_paths = []
+    # video_files = list(Path("/mnt/nvme/clipsviewer/videos_test/PS5/CREATE/Video Clips").glob("**/*.mp4"))
+    video_files = list(Path("/mnt/nvme/clipsviewer/usb_mount/PS5/CREATE/Video Clips/Grand Theft Auto V").glob("**/*.mp4"))
+    total_videos = len(video_files)
+    print(f"Found {total_videos} video files to process")
+    
+    for i, video_file in enumerate(video_files, 1):
+        print(f"\n{'='*50}")
+        print(f"Processing video {i}/{total_videos}: {video_file.name}")
+        print(f"{'='*50}")
+        add_video(video_file, audio_index, video_index, video_paths)
 
-    index: faiss.IndexFlatL2 = load_index()
-    video_files = list(Path("/mnt/nvme/clipsviewer/videos_test/PS5/CREATE/Video Clips/Grand Theft Auto V").glob("*.mp4"))
-    random.shuffle(video_files)
-    for video_file in video_files:
-        video_extractor, audio_extractor = add_video(video_file)
-        chunks = []
-        best_index = (None, float('inf'))
-        for chunk in audio_extractor:
-            chunk_np = chunk[0].cpu().numpy().reshape(1, -1)
-            video_paths.append(chunk[1])
-            if index.ntotal > 0:
-                D, I = index.search(chunk_np, 1)
-                if D[0][0] < best_index[1]:
-                    best_index = (I[0][0], D[0][0])
-            chunks.append(chunk_np)
-        for chunk in chunks:
-            index.add(chunk)
-        print(f"Most similar index: {video_paths[best_index[0]].name}, Distance: {best_index[1]}") if best_index[0] is not None else print("No similar index found.")
-
-    print(f"Loaded FAISS index with {index.ntotal} entries.")
+    print(f"Loaded Audio FAISS index with {audio_index.ntotal} entries.")
+    print(f"Loaded Video FAISS index with {video_index.ntotal} entries.")
 
 main()

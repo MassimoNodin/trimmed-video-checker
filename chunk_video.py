@@ -1,6 +1,7 @@
 from pathlib import Path
 from audio import AudioExtractor
 from utils import video_ranges
+from embedder import EmbedExtractor
 
 def chunk_video(video_path: Path):
     """
@@ -10,5 +11,5 @@ def chunk_video(video_path: Path):
     """
 
     ranges = video_ranges(video_path)
-    audio_extractor = AudioExtractor(video_path, ranges)
-    return audio_extractor, None
+    embed_extractor = EmbedExtractor(video_path, ranges)
+    return embed_extractor
